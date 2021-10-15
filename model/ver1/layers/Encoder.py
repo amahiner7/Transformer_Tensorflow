@@ -1,4 +1,3 @@
-import tensorflow as tf
 from tensorflow.keras.layers import Layer, Dropout
 from model.ver1.embeddings.TransformerEmbedding import TransformerEmbedding
 from model.ver1.layers.EncoderBlock import EncoderBlock
