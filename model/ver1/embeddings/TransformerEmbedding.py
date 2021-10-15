@@ -1,6 +1,6 @@
 import tensorflow as tf
 from tensorflow.keras.layers import Layer, Dropout, Embedding
-from model.ver1.embedding.PositionalEncoding import PositionalEncoding
+from model.ver1.embeddings.PositionalEncoding import PositionalEncoding
 
 
 class TransformerEmbedding(Layer):
