@@ -3,8 +3,8 @@ from tensorflow.keras.layers import Layer, Dense, Dropout
 
 
 class MultiHeadAttention(Layer):
-    def __init__(self, d_embed, d_model, num_heads, dropout_prob):
-        super().__init__()
+    def __init__(self, d_embed, d_model, num_heads, dropout_prob, name="MultiHeadAttention"):
+        super().__init__(name=name)
         self.d_model = d_model  # Model dimension = d_key * num_heads
         self.d_embed = d_embed  # Embedding dimension
         self.num_heads = num_heads  # Num of heads
