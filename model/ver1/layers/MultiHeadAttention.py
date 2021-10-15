@@ -19,7 +19,7 @@ class MultiHeadAttention(Layer):
         self.output_layer = Dense(units=d_embed)
 
         self.dropout = Dropout(rate=dropout_prob)
-        self.d_k_scale = tf.cast(tf.shape(self.d_key)[-1], tf.float32)
+        self.d_k_scale = tf.math.sqrt(tf.cast(tf.shape(self.d_key)[-1], tf.float32))
 
     def _scale_dot_product_attention(self, query_embed, key_embed, value_embed, mask=None):
         """
