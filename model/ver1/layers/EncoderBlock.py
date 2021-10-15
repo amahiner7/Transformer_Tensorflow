@@ -1,10 +1,9 @@
-from tensorflow.keras.models import Model
-from tensorflow.keras.layers import LayerNormalization, Dropout
+from tensorflow.keras.layers import Layer, LayerNormalization, Dropout
 from model.ver1.layers.MultiHeadAttention import MultiHeadAttention
 from model.ver1.layers.PositionWiseFeedForward import PositionWiseFeedForward
 
 
-class EncoderBlock(Model):
+class EncoderBlock(Layer):
     def __init__(self, d_embed, d_model, d_ff, num_heads, dropout_prob, name="EncoderBlock"):
         super().__init__(name=name)
 
