@@ -1,6 +1,6 @@
 import tensorflow as tf
 import numpy as np
-from tensorflow.keras.layers import Layer, LayerNormalization, Dropout
+from tensorflow.keras.layers import Layer
 
 
 class PositionalEncoding(Layer):
@@ -8,14 +8,14 @@ class PositionalEncoding(Layer):
     compute sinusoid encoding.
     """
 
-    def __init__(self, d_embed, max_len):
+    def __init__(self, d_embed, max_len, name="PositionalEncoding"):
         """
         constructor of sinusoid encoding class
 
         :param d_embed: dimension of embedding
         :param max_len: max sequence length
         """
-        super().__init__()
+        super().__init__(name=name)
 
         def _get_angle(position, dim, d_embed):
             return position / np.power(10000, 2 * (dim // 2) / d_embed)

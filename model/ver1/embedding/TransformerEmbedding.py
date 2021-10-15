@@ -4,8 +4,8 @@ from model.ver1.embedding.PositionalEncoding import PositionalEncoding
 
 
 class TransformerEmbedding(Layer):
-    def __init__(self, vocab_size, d_model, seq_len, dropout_prob):
-        super().__init__()
+    def __init__(self, vocab_size, d_model, seq_len, dropout_prob, name="TransformerEmbedding"):
+        super().__init__(name=name)
 
         self.token_embedding = Embedding(input_dim=vocab_size, output_dim=d_model)
         self.position_embedding = PositionalEncoding(d_model, seq_len)
