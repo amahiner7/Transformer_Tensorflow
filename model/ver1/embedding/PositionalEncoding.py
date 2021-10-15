@@ -37,7 +37,7 @@ class PositionalEncoding(Layer):
         :param input:
         :return:
         """
-        position_encoding = input + self.encoding[:tf.shape(input)[1]]
+        position_encoding = self.encoding[:tf.shape(input)[1]]
 
         return position_encoding
 
