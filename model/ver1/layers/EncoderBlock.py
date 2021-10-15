@@ -18,7 +18,7 @@ class EncoderBlock(Model):
         self.feed_forward_layer = PositionWiseFeedForward(
             d_embed=d_embed, d_ff=d_ff, dropout_prob=dropout_prob)
 
-        self.dropout = Dropout(dropout_prob)
+        self.dropout = Dropout(rate=dropout_prob)
 
     def call(self, source, mask):
         """

@@ -8,7 +8,7 @@ class PositionWiseFeedForward(Layer):
         self.first_fc_layer = Dense(units=d_ff)
         self.second_fc_layer = Dense(units=d_embed)
         self.relu = ReLU()
-        self.dropout = Dropout(dropout_prob)
+        self.dropout = Dropout(rate=dropout_prob)
 
     def call(self, input):
         """
