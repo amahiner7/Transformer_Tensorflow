@@ -4,12 +4,11 @@ from model.ver1.embedding.PositionalEncoding import PositionalEncoding
 
 
 class TransformerEmbedding(Layer):
-    def __init__(self, vocab_size, d_model, seq_len, dropout_prob, device):
+    def __init__(self, vocab_size, d_model, seq_len, dropout_prob):
         super().__init__()
 
-        self.device = device
         self.token_embedding = Embedding(input_dim=vocab_size, output_dim=d_model)
-        self.position_embedding = PositionalEncoding(d_model, seq_len, device)
+        self.position_embedding = PositionalEncoding(d_model, seq_len)
         self.drop_out = Dropout(rate=dropout_prob)
         self.scale = tf.math.sqrt(tf.cast(d_model, tf.float32))
 
