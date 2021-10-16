@@ -20,7 +20,7 @@ class Decoder(Layer):
                                         dropout_prob=dropout_prob)
                            for _ in range(num_layers)]
 
-        self.generator_fc_layer = Dense(d_model, d_output)
+        self.generator_fc_layer = Dense(d_output)
         self.dropout = Dropout(dropout_prob)
 
     def forward(self, decoder_source, decoder_mask, encoder_source, encoder_mask):
