@@ -89,11 +89,13 @@ class Transformer(Model):
 
         return tf.maximum(target_sub_mask, target_mask)
 
-    def call(self, source, target):
+    def call(self, inputs):
         """
         source shape: (batch_size, source_len)
         target shape: (batch_size, target_len)
         """
+        source = inputs['source']
+        target = inputs['target']
 
         # source_mask shape: (batch_size, 1, 1, source_len)
         # target_mask shape: (batch_size, 1, target_len, target_len)
@@ -101,11 +103,13 @@ class Transformer(Model):
         target_mask = self.make_target_mask(target=target)
 
         # encoder_output shape: (batch_size, source_len, model_dim)
-        encoder_output = self.encoder(source=source, mask=source_mask)
+        encoder_output = self.encoder(inputs={'source': source, 'mask': source_mask})
 
         # output shape: (batch_size, target_len, output_dim)
         # attention shape: (batch_size, num_heads, target_len, src_len)
-        output, attention = self.decoder(decoder_source=target, decoder_mask=target_mask,
-                                         encoder_source=encoder_output, encoder_mask=source_mask)
+        output, attention = self.decoder(inputs={'decoder_source': target,
+                                                 'decoder_mask': target_mask,
+                                                 'encoder_source': encoder_output,
+                                                 'encoder_mask': source_mask})
 
         return output, attention

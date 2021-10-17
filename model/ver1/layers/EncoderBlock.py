@@ -19,19 +19,18 @@ class EncoderBlock(Layer):
 
         self.dropout = Dropout(rate=dropout_prob)
 
-    def call(self, source, mask):
+    def call(self, inputs):
         """
         :param source : shape (batch_size, seq_len, d_embed)
         :param mask: shape (batch_size, seq_len, seq_len)
         :return output: (batch_size, seq_len, d_embed)
         """
+        source = inputs['source']
+        mask = inputs['mask']
 
         # Self attention
         self_attention_output, _ = self.self_attention_layer(
-            query_embed=source,
-            key_embed=source,
-            value_embed=source,
-            mask=mask)
+            inputs={'query_embed': source, 'key_embed': source, 'value_embed': source, 'mask': mask})
 
         # Dropout, Residual connection, Layer Norm
         self_attention_output = self.self_attention_norm(source + self.dropout(self_attention_output))
