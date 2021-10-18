@@ -8,7 +8,7 @@ class PositionalEncoding(Layer):
     compute sinusoid encoding.
     """
 
-    def __init__(self, d_embed, max_len, name="PositionalEncoding"):
+    def __init__(self, max_len, d_embed, name="PositionalEncoding"):
         """
         constructor of sinusoid encoding class
 

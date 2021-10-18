@@ -55,7 +55,7 @@ class MultiHeadAttention(Layer):
         attention_score = attention_score / self.d_k_scale  # scaling
 
         if mask is not None:
-            attention_score = (mask * -1e10)
+            attention_score += (mask * -1e10)
 
         # attention_prob shape: (num_batch, num_heads, seq_len, seq_len), Softmax probability
         attention_prob = tf.nn.softmax(attention_score, axis=-1)
@@ -70,12 +70,7 @@ class MultiHeadAttention(Layer):
 
         return query_attention, attention_prob
 
-    def call(self, inputs):
-        query_embed = inputs['query_embed']
-        key_embed = inputs['key_embed']
-        value_embed = inputs['value_embed']
-        mask = inputs['mask']
-
+    def call(self, query_embed, key_embed, value_embed, mask=None):
         # query_attention shape: (num_batch, seq_len, d_model)
         query_attention, attention_prob = self._scale_dot_product_attention(query_embed=query_embed,
                                                                             key_embed=key_embed,

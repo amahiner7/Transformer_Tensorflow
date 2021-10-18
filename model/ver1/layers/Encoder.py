@@ -10,8 +10,8 @@ class Encoder(Layer):
         super().__init__(name=name)
 
         self.transformer_embedding = TransformerEmbedding(vocab_size=d_input,
-                                                          d_model=d_model,
                                                           seq_len=seq_len,
+                                                          d_embed=d_embed,
                                                           dropout_prob=dropout_prob)
         self.block_list = [EncoderBlock(d_embed=d_embed,
                                         d_model=d_model,
@@ -22,13 +22,10 @@ class Encoder(Layer):
 
         self.dropout = Dropout(dropout_prob)
 
-    def call(self, inputs):
-        source = inputs['source']
-        mask = inputs['mask']
-
+    def call(self, source, mask):
         output = self.dropout(self.transformer_embedding(source))
 
         for block in self.block_list:
-            output = block(inputs={'source': output, 'mask': mask})
+            output = block(source=output, mask=mask)
 
         return output

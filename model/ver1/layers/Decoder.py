@@ -10,8 +10,8 @@ class Decoder(Layer):
         super().__init__(name=name)
 
         self.transformer_embedding = TransformerEmbedding(vocab_size=d_output,
-                                                          d_model=d_model,
                                                           seq_len=seq_len,
+                                                          d_embed=d_embed,
                                                           dropout_prob=dropout_prob)
         self.block_list = [DecoderBlock(d_embed=d_embed,
                                         d_model=d_model,
@@ -23,18 +23,12 @@ class Decoder(Layer):
         self.generator_fc_layer = Dense(d_output)
         self.dropout = Dropout(dropout_prob)
 
-    def call(self, inputs):
-        decoder_source = inputs['decoder_source']
-        decoder_mask = inputs['decoder_mask']
-        encoder_source = inputs['encoder_source']
-        encoder_mask = inputs['encoder_mask']
-
+    def call(self, decoder_source, decoder_mask, encoder_source, encoder_mask):
         output = self.dropout(self.transformer_embedding(decoder_source))
 
         for block in self.block_list:
-            output, attention_prob = block(
-                inputs={'decoder_source': output, 'decoder_mask': decoder_mask,
-                        'encoder_source': encoder_source, 'encoder_mask': encoder_mask})
+            output, attention_prob = block(decoder_source=output, decoder_mask=decoder_mask,
+                                           encoder_source=encoder_source, encoder_mask=encoder_mask)
 
         output = self.generator_fc_layer(output)
 
