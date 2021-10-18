@@ -1,6 +1,7 @@
 import tensorflow as tf
 from tensorflow.keras.models import Model
 from tensorflow.keras.callbacks import ModelCheckpoint, TensorBoard
+from tensorflow.keras.layers import Input
 from tensorflow.keras.optimizers import Adam
 import time
 import math
@@ -103,3 +104,14 @@ class Transformer(Model):
                                          encoder_source=encoder_output, encoder_mask=source_mask)
 
         return output, attention
+
+    def build_graph(self, encoder_input_shape, decoder_input_size, batch_size):
+        encoder_input = Input(shape=encoder_input_shape, batch_size=batch_size)
+        decoder_input = Input(shape=decoder_input_size, batch_size=batch_size)
+        return Model(inputs=[encoder_input, decoder_input], outputs=self.call(encoder_input, decoder_input))
+
+    def summary_model(self, encoder_input_shape, decoder_input_size, batch_size):
+        temp_model = self.build_graph(encoder_input_shape=encoder_input_shape,
+                                      decoder_input_size=decoder_input_size,
+                                      batch_size=batch_size)
+        temp_model.summary()
