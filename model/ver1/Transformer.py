@@ -80,10 +80,9 @@ class Transformer(Model):
         """
         target_len = tf.shape(target)[1]
         target_sub_mask = 1 - tf.linalg.band_part(tf.ones((target_len, target_len)), -1, 0)
+        padding_mask = self.make_source_mask(target)
 
-        target_mask = self.make_source_mask(target_sub_mask)
-
-        return tf.maximum(target_sub_mask, target_mask)
+        return tf.maximum(target_sub_mask, padding_mask)
 
     def call(self, source, target):
         """
