@@ -16,10 +16,8 @@ from utils.LearningRateHistory import LearningRateHistory
 
 class Transformer(Model):
     def __init__(self, d_input, d_output, d_embed, d_model, d_ff, num_heads, num_layers,
-                 dropout_prob, source_pad_index, target_pad_index, seq_len, name='Transformer'):
+                 dropout_prob, seq_len, name='Transformer'):
         super().__init__(name=name)
-
-        # self.input_shape = input_shape
 
         self.encoder = Encoder(d_input=d_input,
                                d_embed=d_embed,
@@ -39,8 +37,6 @@ class Transformer(Model):
                                seq_len=seq_len,
                                dropout_prob=dropout_prob)
 
-        self.source_pad_index = source_pad_index
-        self.target_pad_index = target_pad_index
         self.callbacks = None
 
     def make_callbacks(self, callbacks=None):
