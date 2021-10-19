@@ -8,7 +8,7 @@ import numpy as np
 from config.hyper_parameters import *
 
 start_time = time.time()
-print("Load data start.")
+print("==================== Load data start. ====================")
 
 examples, metadata = tfds.load('ted_hrlr_translate/pt_to_en', with_info=True, as_supervised=True)
 train_examples = examples['train']
@@ -69,3 +69,6 @@ valid_dataset = valid_dataset.filter(filter_max_length).padded_batch(BATCH_SIZE,
 
 encoder_vocab_size = tokenizer_pt.vocab_size + 2
 decoder_vocab_size = tokenizer_en.vocab_size + 2
+
+elapsed_time = time.time() - start_time
+print("==================== Load data complete.({:.1f} second) ====================".format(elapsed_time))

@@ -3,6 +3,7 @@ from tensorflow.keras.models import Model
 from tensorflow.keras.callbacks import ModelCheckpoint, TensorBoard
 from tensorflow.keras.layers import Input
 from tensorflow.keras.optimizers import Adam
+from tensorflow.keras.losses import SparseCategoricalCrossentropy
 import time
 import math
 
@@ -13,6 +14,11 @@ from config.hyper_parameters import *
 from utils.common import *
 from utils.CosineAnnealingWarmUpRestarts import CosineAnnealingWarmUpRestarts
 from utils.LearningRateHistory import LearningRateHistory
+from utils.CustomSchedule import CustomSchedule
+
+
+train_step_signature = [tf.TensorSpec(shape=(None, None), dtype=tf.int64),
+                        tf.TensorSpec(shape=(None, None), dtype=tf.int64)]
 
 
 class Transformer(Model):
@@ -39,6 +45,15 @@ class Transformer(Model):
                                dropout_prob=dropout_prob)
 
         self.callbacks = None
+        self.d_model = d_model
+        self.optimizer = None
+
+        self.train_loss = tf.keras.metrics.Mean(name='train_loss')
+        self.train_accuracy = tf.keras.metrics.SparseCategoricalAccuracy(name='train_accuracy')
+        # checkpoint_path = MODEL_FILE_DIR
+        # ckpt = tf.train.Checkpoint(transformer=self,
+        #                            optimizer=self.optimizer)
+        # self.ckpt_manager = tf.train.CheckpointManager(ckpt, checkpoint_path, max_to_keep=5)
 
     def make_callbacks(self, callbacks=None):
         self.callbacks = []
@@ -64,7 +79,21 @@ class Transformer(Model):
             self.callbacks.append(model_check_point)
             self.callbacks.append(tensorboard)
             # self.callbacks.append(learning_rate_scheduler)
-            self.callbacks.append(learning_rate_history)
+            # self.callbacks.append(learning_rate_history)
+
+    def loss_function(self, label, pred):
+        loss_object = SparseCategoricalCrossentropy(from_logits=True, reduction='none')
+        mask = tf.math.logical_not(tf.math.equal(label, 0))
+        loss_ = loss_object(label, pred)
+        mask = tf.cast(mask, dtype=loss_.dtype)
+        loss_ *= mask
+
+        return tf.reduce_mean(loss_)
+
+    def _compile(self):
+        learning_rate_schedule = CustomSchedule(self.d_model)
+        self.optimizer = Adam(learning_rate=learning_rate_schedule, beat_1=0.9, beat_2=0.98, epsilon=1e-9)
+        # self.compile(optimizer=optimizer, loss=_loss_function, metrics=['accuracy'])
 
     def make_source_mask(self, source):
         """
@@ -104,6 +133,60 @@ class Transformer(Model):
                                          encoder_source=encoder_output, encoder_mask=source_mask)
 
         return output, attention
+
+    @tf.function(input_signature=train_step_signature)
+    def train_on_batch(self, source, target):
+        target_input = target[:, :-1]
+        target_real = target[:, 1:]
+
+        with tf.GradientTape() as tape:
+            predictions, _ = self.call(source, target_input)
+            loss = self.loss_function(target_real, predictions)
+
+        gradients = tape.gradient(loss, self.trainable_variables)
+        self.optimizer.apply_gradients(zip(gradients, self.trainable_variables))
+
+        self.train_loss(loss)
+        self.train_accuracy(target_real, predictions)
+
+    def train_on_epoch(self, train_dataset, epochs, log_interval=1):
+        for epoch in range(epochs):
+            print('=============== Training Epochs {} / {} =============== '.format(epoch + 1, epochs))
+            train_start_time = time.time()
+
+            self.train_loss.reset_states()
+            self.train_accuracy.reset_states()
+
+            for batch_index, (source, target) in enumerate(train_dataset):
+                self.train_on_batch(source=source, target=target)
+
+                if batch_index % log_interval == 0 and batch_index is not 0:
+                    print(" Batch: [{}/{}({:.0f}%)] | Train loss: {:.4f}, accuracy: {:.4f}".format(
+                        batch_index * len(source),
+                        0,  # len(data_loader.dataset),
+                        0,  # 100.0 * batch_index / len(data_loader),
+                        self.train_loss.result(),
+                        self.train_accuracy.result()
+                    ))
+
+            learning_rate = float(tf.keras.backend.get_value(self.optimizer.lr))
+
+            # # inp -> portuguese, tar -> english
+            # for (batch, (inp, tar)) in enumerate(train_dataset):
+            #     self.train_on_batch(batch, inp, tar)
+            #
+            #     if batch % 50 == 0:
+            #         print('에포크 {} 배치 {} 손실 {:.4f} 정확도 {:.4f}'.format(
+            #             epoch + 1, batch, self.train_loss.result(), self.train_accuracy.result()))
+
+            print("Training elapsed time: {} | Train loss: {:.4f}, PPL: {:.4f} | Val loss: {:.4f}, PPL: {:.4f} | "
+                  "Learning rate: {}\n".
+                  format(format_time(time.time() - train_start_time),
+                         self.train_loss.result(),
+                         math.exp(self.train_loss.result()),
+                         0.0,  # val_loss,
+                         0.0,  # math.exp(val_loss),
+                         learning_rate))
 
     def build_graph(self, encoder_input_shape, decoder_input_size, batch_size):
         encoder_input = Input(shape=encoder_input_shape, batch_size=batch_size)

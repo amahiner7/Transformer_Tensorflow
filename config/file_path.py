@@ -14,7 +14,7 @@ TENSORBOARD_LOG_DIR = os.path.join(TRAINING_LOG_DIR, DATETIME_DIR)
 TENSORBOARD_LEARNING_RATE_LOG_DIR = os.path.join(TENSORBOARD_LOG_DIR, "learning_rate")
 MODEL_FILE_ROOT_DIR = "./model_files"
 MODEL_FILE_DIR = os.path.join(MODEL_FILE_ROOT_DIR, DATETIME_DIR)
-MODEL_FILE_PATH = os.path.join(MODEL_FILE_DIR, "ResNet50_UTKFace_epoch_{epoch:02d}_val_loss_{val_loss:.4f}.h5")
+MODEL_FILE_PATH = os.path.join(MODEL_FILE_DIR, "Transformer_epoch_{epoch:02d}_val_loss_{val_loss:.4f}.h5")
 
 if not os.path.exists(LOG_ROOT_DIR):
     os.mkdir(LOG_ROOT_DIR)
