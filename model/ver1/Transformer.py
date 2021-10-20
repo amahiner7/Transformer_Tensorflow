@@ -55,6 +55,25 @@ class Transformer(Model):
         #                            optimizer=self.optimizer)
         # self.ckpt_manager = tf.train.CheckpointManager(ckpt, checkpoint_path, max_to_keep=5)
 
+    def _check_compile(self):
+        if self.optimizer is None:
+            self.compile_model()
+
+    @tf.function(input_signature=train_step_signature)
+    def _tf_func_train_on_batch(self, source, target):
+        target_input = target[:, :-1]
+        target_real = target[:, 1:]
+
+        with tf.GradientTape() as tape:
+            predictions, _ = self.call(source, target_input)
+            loss = self.loss_function(target_real, predictions)
+
+        gradients = tape.gradient(loss, self.trainable_variables)
+        self.optimizer.apply_gradients(zip(gradients, self.trainable_variables))
+
+        self.train_loss(loss)
+        self.train_accuracy(target_real, predictions)
+
     def make_callbacks(self, callbacks=None):
         self.callbacks = []
 
@@ -89,11 +108,6 @@ class Transformer(Model):
         loss_ *= mask
 
         return tf.reduce_mean(loss_)
-
-    def _compile(self):
-        learning_rate_schedule = CustomSchedule(self.d_model)
-        self.optimizer = Adam(learning_rate=learning_rate_schedule, beat_1=0.9, beat_2=0.98, epsilon=1e-9)
-        # self.compile(optimizer=optimizer, loss=_loss_function, metrics=['accuracy'])
 
     def make_source_mask(self, source):
         """
@@ -134,22 +148,21 @@ class Transformer(Model):
 
         return output, attention
 
-    @tf.function(input_signature=train_step_signature)
-    def train_on_batch(self, source, target):
-        target_input = target[:, :-1]
-        target_real = target[:, 1:]
+    def train_on_batch(self, data_loader, log_interval):
+        for batch_index, (source, target) in enumerate(data_loader.item):
+            self._tf_func_train_on_batch(source=source, target=target)
 
-        with tf.GradientTape() as tape:
-            predictions, _ = self.call(source, target_input)
-            loss = self.loss_function(target_real, predictions)
+            if batch_index % log_interval == 0 and batch_index is not 0:
+                print(" Batch: [{}/{}({:.0f}%)] | Train loss: {:.4f}, accuracy: {:.4f}".format(
+                    batch_index * len(source),
+                    len(data_loader.dataset),
+                    100.0 * batch_index / len(data_loader),
+                    self.train_loss.result(),
+                    self.train_accuracy.result()))
 
-        gradients = tape.gradient(loss, self.trainable_variables)
-        self.optimizer.apply_gradients(zip(gradients, self.trainable_variables))
+    def train_on_epoch(self, train_data_loader, valid_data_loader, epochs, log_interval=1):
+        self._check_compile()
 
-        self.train_loss(loss)
-        self.train_accuracy(target_real, predictions)
-
-    def train_on_epoch(self, train_dataset, epochs, log_interval=1):
         for epoch in range(epochs):
             print('=============== Training Epochs {} / {} =============== '.format(epoch + 1, epochs))
             train_start_time = time.time()
@@ -157,27 +170,10 @@ class Transformer(Model):
             self.train_loss.reset_states()
             self.train_accuracy.reset_states()
 
-            for batch_index, (source, target) in enumerate(train_dataset):
-                self.train_on_batch(source=source, target=target)
+            self.train_on_batch(data_loader=train_data_loader, log_interval=log_interval)
 
-                if batch_index % log_interval == 0 and batch_index is not 0:
-                    print(" Batch: [{}/{}({:.0f}%)] | Train loss: {:.4f}, accuracy: {:.4f}".format(
-                        batch_index * len(source),
-                        0,  # len(data_loader.dataset),
-                        0,  # 100.0 * batch_index / len(data_loader),
-                        self.train_loss.result(),
-                        self.train_accuracy.result()
-                    ))
-
-            learning_rate = float(tf.keras.backend.get_value(self.optimizer.lr))
-
-            # # inp -> portuguese, tar -> english
-            # for (batch, (inp, tar)) in enumerate(train_dataset):
-            #     self.train_on_batch(batch, inp, tar)
-            #
-            #     if batch % 50 == 0:
-            #         print('에포크 {} 배치 {} 손실 {:.4f} 정확도 {:.4f}'.format(
-            #             epoch + 1, batch, self.train_loss.result(), self.train_accuracy.result()))
+            # learning_rate = float(tf.keras.backend.get_value(self.optimizer.lr))
+            learning_rate = 0
 
             print("Training elapsed time: {} | Train loss: {:.4f}, PPL: {:.4f} | Val loss: {:.4f}, PPL: {:.4f} | "
                   "Learning rate: {}\n".
@@ -188,7 +184,12 @@ class Transformer(Model):
                          0.0,  # math.exp(val_loss),
                          learning_rate))
 
+    def compile_model(self):
+        learning_rate_schedule = CustomSchedule(self.d_model)
+        self.optimizer = Adam(learning_rate=learning_rate_schedule, beta_1=0.9, beta_2=0.98, epsilon=1e-9)
+
     def build_graph(self, encoder_input_shape, decoder_input_size, batch_size):
+        self._check_compile()
         encoder_input = Input(shape=encoder_input_shape, batch_size=batch_size)
         decoder_input = Input(shape=decoder_input_size, batch_size=batch_size)
         return Model(inputs=[encoder_input, decoder_input], outputs=self.call(encoder_input, decoder_input))
