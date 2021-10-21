@@ -48,8 +48,8 @@ class Transformer(Model):
         self.d_model = d_model
         self.optimizer = None
 
-        self.train_loss = tf.keras.metrics.Mean(name='train_loss')
-        self.train_accuracy = tf.keras.metrics.SparseCategoricalAccuracy(name='train_accuracy')
+        self.train_metric_loss = tf.keras.metrics.Mean(name='train_metric_loss')
+        self.train_metric_accuracy = tf.keras.metrics.SparseCategoricalAccuracy(name='train_metric_accuracy')
         # checkpoint_path = MODEL_FILE_DIR
         # ckpt = tf.train.Checkpoint(transformer=self,
         #                            optimizer=self.optimizer)
@@ -71,8 +71,8 @@ class Transformer(Model):
         gradients = tape.gradient(loss, self.trainable_variables)
         self.optimizer.apply_gradients(zip(gradients, self.trainable_variables))
 
-        self.train_loss(loss)
-        self.train_accuracy(target_real, predictions)
+        self.train_metric_loss(loss)
+        self.train_metric_accuracy(target_real, predictions)
 
     def make_callbacks(self, callbacks=None):
         self.callbacks = []
@@ -153,36 +153,36 @@ class Transformer(Model):
             self._tf_func_train_on_batch(source=source, target=target)
 
             if batch_index % log_interval == 0 and batch_index is not 0:
-                print(" Batch: [{}/{}({:.0f}%)] | Train loss: {:.4f}, accuracy: {:.4f}".format(
+                print(" BATCH: [{}/{}({:.0f}%)] | TRAIN LOSS: {:.4f}, ACCURACY: {:.4f}".format(
                     batch_index * len(source),
                     len(data_loader.dataset),
                     100.0 * batch_index / len(data_loader),
-                    self.train_loss.result(),
-                    self.train_accuracy.result()))
+                    self.train_metric_loss.result(),
+                    self.train_metric_accuracy.result()))
 
     def train_on_epoch(self, train_data_loader, valid_data_loader, epochs, log_interval=1):
         self._check_compile()
 
         for epoch in range(epochs):
-            print('=============== Training Epochs {} / {} =============== '.format(epoch + 1, epochs))
+            print('=============== TRAINING EPOCHS {} / {} =============== '.format(epoch + 1, epochs))
             train_start_time = time.time()
 
-            self.train_loss.reset_states()
-            self.train_accuracy.reset_states()
+            self.train_metric_loss.reset_states()
+            self.train_metric_accuracy.reset_states()
 
             self.train_on_batch(data_loader=train_data_loader, log_interval=log_interval)
 
             # learning_rate = float(tf.keras.backend.get_value(self.optimizer.lr))
             learning_rate = 0
 
-            print("Training elapsed time: {} | Train loss: {:.4f}, PPL: {:.4f} | Val loss: {:.4f}, PPL: {:.4f} | "
-                  "Learning rate: {}\n".
-                  format(format_time(time.time() - train_start_time),
-                         self.train_loss.result(),
-                         math.exp(self.train_loss.result()),
+            print("TRAIN LOSS: {:.4f}, PPL: {:.4f} | VALID LOSS: {:.4f}, PPL: {:.4f} | LEARNING RATE: {} | "
+                  "ELAPSED TIME: {}\n".
+                  format(self.train_metric_loss.result(),
+                         math.exp(self.train_metric_loss.result()),
                          0.0,  # val_loss,
                          0.0,  # math.exp(val_loss),
-                         learning_rate))
+                         learning_rate,
+                         format_time(time.time() - train_start_time)))
 
     def compile_model(self):
         learning_rate_schedule = CustomSchedule(self.d_model)

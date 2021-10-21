@@ -37,8 +37,8 @@ valid_data_loader = DataLoader(dataset=valid_examples,
 print("train_data_loader length: ", len(train_data_loader))
 print("train_data_loader.dataset length: ", len(train_data_loader.dataset))
 
-print("valid_examples length: ", len(valid_data_loader))
-print("valid_examples.dataset length: ", len(valid_data_loader.dataset))
+print("valid_data_loader length: ", len(valid_data_loader))
+print("valid_data_loader.dataset length: ", len(valid_data_loader.dataset))
 
 elapsed_time = time.time() - start_time
 print("==================== Load data complete.({:.1f} second) ====================".format(elapsed_time))
