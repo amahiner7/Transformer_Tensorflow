@@ -65,7 +65,6 @@ def display_attention(sentence, translation, attention, n_heads=8, n_rows=4, n_c
 def display_loss(history):
     train_loss = history['loss']
     val_loss = history['val_loss']
-    learning_rate = history['learning_rate']
 
     # 그래프로 표현
     x_len = np.arange(len(train_loss))
