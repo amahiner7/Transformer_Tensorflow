@@ -17,7 +17,7 @@ model.summary_model()
 
 model.compile_model()
 model.fit(train_data_loader.item,
-#          validation_data=valid_data_loader.item,
+          validation_data=valid_data_loader.item,
           epochs=NUM_EPOCHS,
           callbacks=model.make_callbacks(),
           verbose=1)

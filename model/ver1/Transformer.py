@@ -79,6 +79,24 @@ class Transformer(Model):
         # Return a dict mapping metric names to current value
         return {m.name: m.result() for m in self.metrics}
 
+    def test_step(self, data):
+        # Unpack the data
+        source, target = data
+        target_input = target[:, :-1]
+        target_real = target[:, 1:]
+
+        # Compute predictions
+        predictions, _ = self.call((source, target_input))
+
+        # Updates the metrics tracking the loss
+        loss = self.compiled_loss(target_real, predictions, regularization_losses=self.losses)
+
+        # Update metrics (includes the metric that tracks the loss)
+        self.compiled_metrics.update_state(target_real, predictions)
+
+        # Return a dict mapping metric names to current value
+        return {m.name: m.result() for m in self.metrics}
+
     def make_callbacks(self):
         callbacks = []
 
@@ -97,7 +115,7 @@ class Transformer(Model):
                                                                 m_mul=1.0)
         learning_rate_history = LearningRateHistory(log_dir=TENSORBOARD_LEARNING_RATE_LOG_DIR)
 
-        # callbacks.append(model_check_point)
+        callbacks.append(model_check_point)
         callbacks.append(tensorboard)
         callbacks.append(learning_rate_scheduler)
         callbacks.append(learning_rate_history)
