@@ -47,9 +47,12 @@ class Transformer(Model):
         self.callbacks = None
         self.d_model = d_model
         self.optimizer = None
+        self.learning_rate_schedule = None
 
         self.train_metric_loss = tf.keras.metrics.Mean(name='train_metric_loss')
         self.train_metric_accuracy = tf.keras.metrics.SparseCategoricalAccuracy(name='train_metric_accuracy')
+        self.valid_metric_loss = tf.keras.metrics.Mean(name='valid_metric_loss')
+        self.valid_metric_accuracy = tf.keras.metrics.SparseCategoricalAccuracy(name='valid_metric_accuracy')
         # checkpoint_path = MODEL_FILE_DIR
         # ckpt = tf.train.Checkpoint(transformer=self,
         #                            optimizer=self.optimizer)
@@ -60,13 +63,13 @@ class Transformer(Model):
             self.compile_model()
 
     @tf.function(input_signature=train_step_signature)
-    def _tf_func_train_on_batch(self, source, target):
+    def _tf_train_on_batch(self, source, target):
         target_input = target[:, :-1]
         target_real = target[:, 1:]
 
         with tf.GradientTape() as tape:
             predictions, _ = self.call(source, target_input)
-            loss = self.loss_function(target_real, predictions)
+            loss = self.criterion(target_real, predictions)
 
         gradients = tape.gradient(loss, self.trainable_variables)
         self.optimizer.apply_gradients(zip(gradients, self.trainable_variables))
@@ -74,33 +77,44 @@ class Transformer(Model):
         self.train_metric_loss(loss)
         self.train_metric_accuracy(target_real, predictions)
 
-    def make_callbacks(self, callbacks=None):
-        self.callbacks = []
+    @tf.function(input_signature=train_step_signature)
+    def _tf_evaluate_on_batch(self, source, target):
+        target_input = target[:, :-1]
+        target_real = target[:, 1:]
 
-        if callbacks is not None:
-            self.callbacks = callbacks
-        else:
-            model_check_point = ModelCheckpoint(filepath=MODEL_FILE_PATH,
-                                                monitor='val_loss',
-                                                save_weights_only=True,
-                                                save_best_only=True,
-                                                verbose=1)
+        predictions, _ = self.call(source, target_input)
+        loss = self.criterion(target_real, predictions)
 
-            tensorboard = TensorBoard(log_dir=TENSORBOARD_LOG_DIR)
+        self.valid_metric_loss(loss)
+        self.valid_metric_accuracy(target_real, predictions)
 
-            learning_rate_scheduler = CosineAnnealingWarmUpRestarts(initial_learning_rate=1e-5,
-                                                                    first_decay_steps=1,
-                                                                    alpha=0.0,
-                                                                    t_mul=2.0,
-                                                                    m_mul=1.0)
-            learning_rate_history = LearningRateHistory(log_dir=TENSORBOARD_LEARNING_RATE_LOG_DIR)
+    # def make_callbacks(self, callbacks=None):
+    #     self.callbacks = []
+    #
+    #     if callbacks is not None:
+    #         self.callbacks = callbacks
+    #     else:
+    #         model_check_point = ModelCheckpoint(filepath=MODEL_FILE_PATH,
+    #                                             monitor='val_loss',
+    #                                             save_weights_only=True,
+    #                                             save_best_only=True,
+    #                                             verbose=1)
+    #
+    #         tensorboard = TensorBoard(log_dir=TENSORBOARD_LOG_DIR)
+    #
+    #         learning_rate_scheduler = CosineAnnealingWarmUpRestarts(initial_learning_rate=1e-5,
+    #                                                                 first_decay_steps=1,
+    #                                                                 alpha=0.0,
+    #                                                                 t_mul=2.0,
+    #                                                                 m_mul=1.0)
+    #         learning_rate_history = LearningRateHistory(log_dir=TENSORBOARD_LEARNING_RATE_LOG_DIR)
+    #
+    #         self.callbacks.append(model_check_point)
+    #         self.callbacks.append(tensorboard)
+    #         self.callbacks.append(learning_rate_scheduler)
+    #         self.callbacks.append(learning_rate_history)
 
-            self.callbacks.append(model_check_point)
-            self.callbacks.append(tensorboard)
-            # self.callbacks.append(learning_rate_scheduler)
-            # self.callbacks.append(learning_rate_history)
-
-    def loss_function(self, label, pred):
+    def criterion(self, label, pred):
         loss_object = SparseCategoricalCrossentropy(from_logits=True, reduction='none')
         mask = tf.math.logical_not(tf.math.equal(label, 0))
         loss_ = loss_object(label, pred)
@@ -150,7 +164,7 @@ class Transformer(Model):
 
     def train_on_batch(self, data_loader, log_interval):
         for batch_index, (source, target) in enumerate(data_loader.item):
-            self._tf_func_train_on_batch(source=source, target=target)
+            self._tf_train_on_batch(source=source, target=target)
 
             if batch_index % log_interval == 0 and batch_index is not 0:
                 print(" BATCH: [{}/{}({:.0f}%)] | TRAIN LOSS: {:.4f}, ACCURACY: {:.4f}".format(
@@ -159,6 +173,10 @@ class Transformer(Model):
                     100.0 * batch_index / len(data_loader),
                     self.train_metric_loss.result(),
                     self.train_metric_accuracy.result()))
+
+    def evaluate_on_batch(self, data_loader):
+        for batch_index, (source, target) in enumerate(data_loader.item):
+            self._tf_evaluate_on_batch(source=source, target=target)
 
     def train_on_epoch(self, train_data_loader, valid_data_loader, epochs, log_interval=1):
         self._check_compile()
@@ -169,24 +187,25 @@ class Transformer(Model):
 
             self.train_metric_loss.reset_states()
             self.train_metric_accuracy.reset_states()
+            self.valid_metric_loss.reset_states()
+            self.valid_metric_accuracy.reset_states()
 
             self.train_on_batch(data_loader=train_data_loader, log_interval=log_interval)
+            self.evaluate_on_batch(data_loader=valid_data_loader)
 
-            # learning_rate = float(tf.keras.backend.get_value(self.optimizer.lr))
-            learning_rate = 0
-
-            print("TRAIN LOSS: {:.4f}, PPL: {:.4f} | VALID LOSS: {:.4f}, PPL: {:.4f} | LEARNING RATE: {} | "
+            print("TRAIN LOSS: {:.4f}, ACC: {:.2f}, PPL: {:.4f} | VALID LOSS: {:.4f}, ACC: {:.2f}, PPL: {:.4f} | "
                   "ELAPSED TIME: {}\n".
                   format(self.train_metric_loss.result(),
+                         self.train_metric_accuracy.result() * 100.0,
                          math.exp(self.train_metric_loss.result()),
-                         0.0,  # val_loss,
-                         0.0,  # math.exp(val_loss),
-                         learning_rate,
+                         self.valid_metric_loss.result(),
+                         self.valid_metric_accuracy.result() * 100.0,
+                         math.exp(self.valid_metric_loss.result()),
                          format_time(time.time() - train_start_time)))
 
     def compile_model(self):
-        learning_rate_schedule = CustomSchedule(self.d_model)
-        self.optimizer = Adam(learning_rate=learning_rate_schedule, beta_1=0.9, beta_2=0.98, epsilon=1e-9)
+        self.learning_rate_schedule = CustomSchedule(self.d_model)
+        self.optimizer = Adam(learning_rate=self.learning_rate_schedule, beta_1=0.9, beta_2=0.98, epsilon=1e-9)
 
     def build_graph(self, encoder_input_shape, decoder_input_size, batch_size):
         self._check_compile()
@@ -194,7 +213,13 @@ class Transformer(Model):
         decoder_input = Input(shape=decoder_input_size, batch_size=batch_size)
         return Model(inputs=[encoder_input, decoder_input], outputs=self.call(encoder_input, decoder_input))
 
-    def summary_model(self, encoder_input_shape, decoder_input_size, batch_size):
+    def summary_model(self):
+        temp_source = tf.random.uniform((BATCH_SIZE, 38), dtype=tf.int64, minval=0, maxval=200)
+        temp_target = tf.random.uniform((BATCH_SIZE, 36), dtype=tf.int64, minval=0, maxval=200)
+        encoder_input_shape = temp_source.shape[-1]
+        decoder_input_size = temp_target.shape[-1]
+        batch_size = temp_target.shape[0]
+
         temp_model = self.build_graph(encoder_input_shape=encoder_input_shape,
                                       decoder_input_size=decoder_input_size,
                                       batch_size=batch_size)
