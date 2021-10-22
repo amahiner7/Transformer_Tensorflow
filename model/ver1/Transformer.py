@@ -44,10 +44,8 @@ class Transformer(Model):
                                seq_len=seq_len,
                                dropout_prob=dropout_prob)
 
-        self.callbacks = None
-        self.d_model = d_model
-        self.optimizer = None
-        self.learning_rate_schedule = None
+        self.learning_rate_schedule = CustomSchedule(d_model)
+        self.optimizer = Adam(learning_rate=self.learning_rate_schedule, beta_1=0.9, beta_2=0.98, epsilon=1e-9)
 
         self.train_metric_loss = tf.keras.metrics.Mean(name='train_metric_loss')
         self.train_metric_accuracy = tf.keras.metrics.SparseCategoricalAccuracy(name='train_metric_accuracy')
@@ -57,10 +55,6 @@ class Transformer(Model):
         # ckpt = tf.train.Checkpoint(transformer=self,
         #                            optimizer=self.optimizer)
         # self.ckpt_manager = tf.train.CheckpointManager(ckpt, checkpoint_path, max_to_keep=5)
-
-    def _check_compile(self):
-        if self.optimizer is None:
-            self.compile_model()
 
     @tf.function(input_signature=train_step_signature)
     def _tf_train_on_batch(self, source, target):
@@ -88,31 +82,30 @@ class Transformer(Model):
         self.valid_metric_loss(loss)
         self.valid_metric_accuracy(target_real, predictions)
 
-    # def make_callbacks(self, callbacks=None):
-    #     self.callbacks = []
-    #
-    #     if callbacks is not None:
-    #         self.callbacks = callbacks
-    #     else:
-    #         model_check_point = ModelCheckpoint(filepath=MODEL_FILE_PATH,
-    #                                             monitor='val_loss',
-    #                                             save_weights_only=True,
-    #                                             save_best_only=True,
-    #                                             verbose=1)
-    #
-    #         tensorboard = TensorBoard(log_dir=TENSORBOARD_LOG_DIR)
-    #
-    #         learning_rate_scheduler = CosineAnnealingWarmUpRestarts(initial_learning_rate=1e-5,
-    #                                                                 first_decay_steps=1,
-    #                                                                 alpha=0.0,
-    #                                                                 t_mul=2.0,
-    #                                                                 m_mul=1.0)
-    #         learning_rate_history = LearningRateHistory(log_dir=TENSORBOARD_LEARNING_RATE_LOG_DIR)
-    #
-    #         self.callbacks.append(model_check_point)
-    #         self.callbacks.append(tensorboard)
-    #         self.callbacks.append(learning_rate_scheduler)
-    #         self.callbacks.append(learning_rate_history)
+    def make_callbacks(self, callbacks=None):
+        callbacks = []
+
+        model_check_point = ModelCheckpoint(filepath=MODEL_FILE_PATH,
+                                            monitor='val_loss',
+                                            save_weights_only=True,
+                                            save_best_only=True,
+                                            verbose=1)
+
+        tensorboard = TensorBoard(log_dir=TENSORBOARD_LOG_DIR)
+
+        learning_rate_scheduler = CosineAnnealingWarmUpRestarts(initial_learning_rate=1e-5,
+                                                                first_decay_steps=1,
+                                                                alpha=0.0,
+                                                                t_mul=2.0,
+                                                                m_mul=1.0)
+        learning_rate_history = LearningRateHistory(log_dir=TENSORBOARD_LEARNING_RATE_LOG_DIR)
+
+        callbacks.append(model_check_point)
+        callbacks.append(tensorboard)
+        callbacks.append(learning_rate_scheduler)
+        callbacks.append(learning_rate_history)
+
+        return callbacks
 
     def criterion(self, label, pred):
         loss_object = SparseCategoricalCrossentropy(from_logits=True, reduction='none')
@@ -179,8 +172,6 @@ class Transformer(Model):
             self._tf_evaluate_on_batch(source=source, target=target)
 
     def train_on_epoch(self, train_data_loader, valid_data_loader, epochs, log_interval=1):
-        self._check_compile()
-
         for epoch in range(epochs):
             print('=============== TRAINING EPOCHS {} / {} =============== '.format(epoch + 1, epochs))
             train_start_time = time.time()
@@ -204,11 +195,9 @@ class Transformer(Model):
                          format_time(time.time() - train_start_time)))
 
     def compile_model(self):
-        self.learning_rate_schedule = CustomSchedule(self.d_model)
-        self.optimizer = Adam(learning_rate=self.learning_rate_schedule, beta_1=0.9, beta_2=0.98, epsilon=1e-9)
+        self.compile(optimizer=self.optimizer, loss=self.criterion, metrics=['accuracy'])
 
     def build_graph(self, encoder_input_shape, decoder_input_size, batch_size):
-        self._check_compile()
         encoder_input = Input(shape=encoder_input_shape, batch_size=batch_size)
         decoder_input = Input(shape=decoder_input_size, batch_size=batch_size)
         return Model(inputs=[encoder_input, decoder_input], outputs=self.call(encoder_input, decoder_input))
