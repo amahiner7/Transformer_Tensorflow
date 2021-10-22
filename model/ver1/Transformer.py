@@ -1,4 +1,3 @@
-import tensorflow as tf
 from tensorflow.keras.models import Model
 from tensorflow.keras.callbacks import ModelCheckpoint, TensorBoard
 from tensorflow.keras.layers import Input
@@ -46,15 +45,12 @@ class Transformer(Model):
 
         self.learning_rate_schedule = CustomSchedule(d_model)
         self.optimizer = Adam(learning_rate=self.learning_rate_schedule, beta_1=0.9, beta_2=0.98, epsilon=1e-9)
+        # self.optimizer = Adam(learning_rate=LEARNING_RATE)
 
         self.train_metric_loss = tf.keras.metrics.Mean(name='train_metric_loss')
         self.train_metric_accuracy = tf.keras.metrics.SparseCategoricalAccuracy(name='train_metric_accuracy')
         self.valid_metric_loss = tf.keras.metrics.Mean(name='valid_metric_loss')
         self.valid_metric_accuracy = tf.keras.metrics.SparseCategoricalAccuracy(name='valid_metric_accuracy')
-        # checkpoint_path = MODEL_FILE_DIR
-        # ckpt = tf.train.Checkpoint(transformer=self,
-        #                            optimizer=self.optimizer)
-        # self.ckpt_manager = tf.train.CheckpointManager(ckpt, checkpoint_path, max_to_keep=5)
 
     @tf.function(input_signature=train_step_signature)
     def _tf_train_on_batch(self, source, target):
@@ -66,10 +62,38 @@ class Transformer(Model):
             loss = self.criterion(target_real, predictions)
 
         gradients = tape.gradient(loss, self.trainable_variables)
+
         self.optimizer.apply_gradients(zip(gradients, self.trainable_variables))
 
         self.train_metric_loss(loss)
         self.train_metric_accuracy(target_real, predictions)
+
+    # @tf.function()
+    # def train_step(self, data):
+    #     # Unpack the data
+    #     source, target = data
+    #     target_input = target[:, :-1]
+    #     target_real = target[:, 1:]
+    #
+    #     with tf.GradientTape() as tape:
+    #         # Compute predictions
+    #         predictions, _ = self.call(source, target_input)
+    #
+    #         # Updates the metrics tracking the loss
+    #         loss = self.compiled_loss(target_real, predictions, regularization_losses=self.losses)
+    #
+    #     # Compute gradients
+    #     trainable_var = self.trainable_variables
+    #     gradients = tape.gradient(loss, trainable_var)
+    #
+    #     # Update weights
+    #     self.optimizer.apply_gradients(zip(gradients, trainable_var))
+    #
+    #     # Update metrics (includes the metric that tracks the loss)
+    #     self.compiled_metrics.update_state(target_real, predictions)
+    #
+    #     # Return a dict mapping metric names to current value
+    #     return {m.name: m.result() for m in self.metrics}
 
     @tf.function(input_signature=train_step_signature)
     def _tf_evaluate_on_batch(self, source, target):
@@ -82,7 +106,7 @@ class Transformer(Model):
         self.valid_metric_loss(loss)
         self.valid_metric_accuracy(target_real, predictions)
 
-    def make_callbacks(self, callbacks=None):
+    def make_callbacks(self):
         callbacks = []
 
         model_check_point = ModelCheckpoint(filepath=MODEL_FILE_PATH,
@@ -93,7 +117,7 @@ class Transformer(Model):
 
         tensorboard = TensorBoard(log_dir=TENSORBOARD_LOG_DIR)
 
-        learning_rate_scheduler = CosineAnnealingWarmUpRestarts(initial_learning_rate=1e-5,
+        learning_rate_scheduler = CosineAnnealingWarmUpRestarts(initial_learning_rate=LEARNING_RATE,
                                                                 first_decay_steps=1,
                                                                 alpha=0.0,
                                                                 t_mul=2.0,

@@ -1,6 +1,8 @@
-from data.legacy.load_data import *
+from config.hyper_parameters import *
+from data.legacy.load_data import load_data
 from model.ver1.Transformer import Transformer
 
+train_data_loader, valid_data_loader = load_data(0.1)
 
 model = Transformer(d_input=train_data_loader.encoder_vocab_size,
                     d_output=train_data_loader.decoder_vocab_size,
@@ -23,4 +25,4 @@ model.fit(train_data_loader.item,
 # model.train_on_epoch(train_data_loader=train_data_loader,
 #                      valid_data_loader=valid_data_loader,
 #                      epochs=NUM_EPOCHS,
-#                      log_interval=100)
+#                      log_interval=50)
