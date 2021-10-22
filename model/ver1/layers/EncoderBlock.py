@@ -19,7 +19,7 @@ class EncoderBlock(Layer):
 
         self.dropout = Dropout(rate=dropout_prob)
 
-    def call(self, source, mask):
+    def call(self, source, mask, training):
         """
         :param source : shape (batch_size, seq_len, d_embed)
         :param mask: shape (batch_size, seq_len, seq_len)
@@ -30,15 +30,19 @@ class EncoderBlock(Layer):
             query_embed=source,
             key_embed=source,
             value_embed=source,
-            mask=mask)
+            mask=mask,
+            training=training)
 
         # Dropout, Residual connection, Layer Norm
-        self_attention_output = self.self_attention_norm(source + self.dropout(self_attention_output))
+        self_attention_output = self.self_attention_norm(
+            source + self.dropout(self_attention_output, training=training))
 
         # Position wise feed forward
         feed_forward_output = self.feed_forward_layer(self_attention_output)
 
         # Dropout, Residual connection, Layer Normalization
-        output = self.feed_forward_norm(self_attention_output + self.dropout(feed_forward_output))
+        output = self.feed_forward_norm(
+            self_attention_output + self.dropout(feed_forward_output, training=training),
+            training=training)
 
         return output

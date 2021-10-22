@@ -10,7 +10,7 @@ class PositionWiseFeedForward(Layer):
         self.relu = ReLU()
         self.dropout = Dropout(rate=dropout_prob)
 
-    def call(self, input):
+    def call(self, input, training):
         """
         :param input: shape (batch_size, seq_len, d_embed)
         :return output: shape (batch_size, seq_len, d_embed)
@@ -18,7 +18,7 @@ class PositionWiseFeedForward(Layer):
 
         output = self.first_fc_layer(input)  # output shape : (batch_size, seq_len, d_ff)
         output = self.relu(output)
-        output = self.dropout(output)
+        output = self.dropout(output, training=training)
 
         # output shape : (batch_size, seq_len, d_embed)
         output = self.second_fc_layer(output)

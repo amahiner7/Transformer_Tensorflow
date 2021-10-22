@@ -22,10 +22,10 @@ class Encoder(Layer):
 
         self.dropout = Dropout(dropout_prob)
 
-    def call(self, source, mask):
-        output = self.dropout(self.transformer_embedding(source))
+    def call(self, source, mask, training):
+        output = self.dropout(self.transformer_embedding(source), training=training)
 
         for block in self.block_list:
-            output = block(source=output, mask=mask)
+            output = block(source=output, mask=mask, training=training)
 
         return output

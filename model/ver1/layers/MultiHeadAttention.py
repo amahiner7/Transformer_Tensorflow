@@ -21,7 +21,7 @@ class MultiHeadAttention(Layer):
         self.dropout = Dropout(rate=dropout_prob)
         self.d_k_scale = tf.math.sqrt(tf.cast(self.d_key, tf.float32))
 
-    def _scale_dot_product_attention(self, query_embed, key_embed, value_embed, mask=None):
+    def _scale_dot_product_attention(self, query_embed, key_embed, value_embed, mask=None, training=True):
         """
         :param query_embed: shape (num_batch, seq_len, d_embed)
         :param key_embed: shape (num_batch, seq_len, d_embed)
@@ -59,7 +59,7 @@ class MultiHeadAttention(Layer):
 
         # attention_prob shape: (num_batch, num_heads, seq_len, seq_len), Softmax probability
         attention_prob = tf.nn.softmax(attention_score, axis=-1)
-        attention_prob = self.dropout(attention_prob)  # dropout
+        attention_prob = self.dropout(attention_prob, training=training)  # dropout
 
         # query_attention shape: (num_batch, num_heads, seq_len, d_key)
         query_attention = tf.matmul(attention_prob, value)
@@ -70,12 +70,13 @@ class MultiHeadAttention(Layer):
 
         return query_attention, attention_prob
 
-    def call(self, query_embed, key_embed, value_embed, mask=None):
+    def call(self, query_embed, key_embed, value_embed, mask=None, training=True):
         # query_attention shape: (num_batch, seq_len, d_model)
         query_attention, attention_prob = self._scale_dot_product_attention(query_embed=query_embed,
                                                                             key_embed=key_embed,
                                                                             value_embed=value_embed,
-                                                                            mask=mask)
+                                                                            mask=mask,
+                                                                            training=training)
 
         # output shape: (num_batch, seq_len, d_embed)
         output = self.output_layer(query_attention)

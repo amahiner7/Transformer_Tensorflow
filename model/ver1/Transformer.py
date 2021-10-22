@@ -46,6 +46,7 @@ class Transformer(Model):
         self.learning_rate_schedule = CustomSchedule(d_model)
         # self.optimizer = Adam(learning_rate=self.learning_rate_schedule, beta_1=0.9, beta_2=0.98, epsilon=1e-9)
         self.optimizer = Adam(learning_rate=LEARNING_RATE)
+        self.training = True
 
         # self.train_metric_loss = tf.keras.metrics.Mean(name='train_metric_loss')
         # self.train_metric_accuracy = tf.keras.metrics.SparseCategoricalAccuracy(name='train_metric_accuracy')
@@ -163,12 +164,13 @@ class Transformer(Model):
         target_mask = self.make_target_mask(target=target)
 
         # encoder_output shape: (batch_size, source_len, model_dim)
-        encoder_output = self.encoder(source=source, mask=source_mask)
+        encoder_output = self.encoder(source=source, mask=source_mask, training=self.training)
 
         # output shape: (batch_size, target_len, output_dim)
         # attention shape: (batch_size, num_heads, target_len, src_len)
         output, attention = self.decoder(decoder_source=target, decoder_mask=target_mask,
-                                         encoder_source=encoder_output, encoder_mask=source_mask)
+                                         encoder_source=encoder_output, encoder_mask=source_mask,
+                                         training=self.training)
 
         return output, attention
 

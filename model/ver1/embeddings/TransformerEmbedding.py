@@ -12,10 +12,10 @@ class TransformerEmbedding(Layer):
         self.drop_out = Dropout(rate=dropout_prob)
         self.scale = tf.math.sqrt(tf.cast(d_embed, tf.float32))
 
-    def call(self, input):
+    def call(self, input, training):
         token_embedding = self.token_embedding(input)
         position_embedding = self.position_embedding(input)
         output = (token_embedding * self.scale) + position_embedding
-        output = self.drop_out(output)
+        output = self.drop_out(output, training=training)
 
         return output

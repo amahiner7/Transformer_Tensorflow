@@ -24,7 +24,7 @@ class DecoderBlock(Layer):
 
         self.dropout = Dropout(rate=dropout_prob)
 
-    def call(self, decoder_source, decoder_mask, encoder_source, encoder_mask):
+    def call(self, decoder_source, decoder_mask, encoder_source, encoder_mask, training):
         """
         :param decoder_source: shape (batch_size, seq_len, d_embed)
         :param decoder_mask: shape (batch_size, seq_len, seq_len)
@@ -38,26 +38,30 @@ class DecoderBlock(Layer):
             query_embed=decoder_source,
             key_embed=decoder_source,
             value_embed=decoder_source,
-            mask=decoder_mask)
+            mask=decoder_mask,
+            training=training)
 
         # Dropout, Residual connection, Layer Norm
-        self_attention_output = self.self_attention_norm(decoder_source + self.dropout(self_attention_output))
+        self_attention_output = self.self_attention_norm(
+            decoder_source + self.dropout(self_attention_output, training=training))
 
         # Self attention
         encoder_attention_output, attention_prob = self.encoder_attention_layer(
             query_embed=self_attention_output,
             key_embed=encoder_source,
             value_embed=encoder_source,
-            mask=encoder_mask)
+            mask=encoder_mask,
+            training=training)
 
         # Dropout, Residual connection, Layer Norm
         encoder_attention_output = self.encoder_attention_norm(
-            self_attention_output + self.dropout(encoder_attention_output))
+            self_attention_output + self.dropout(encoder_attention_output, training=training))
 
         # Position wise feed forward
-        feed_forward_output = self.feed_forward_layer(encoder_attention_output)
+        feed_forward_output = self.feed_forward_layer(input=encoder_attention_output, training=training)
 
         # Dropout, Residual connection, Layer Norm
-        output = self.feed_forward_norm(encoder_attention_output + self.dropout(feed_forward_output))
+        output = self.feed_forward_norm(
+            encoder_attention_output + self.dropout(feed_forward_output, training=training))
 
         return output, attention_prob
