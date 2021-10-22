@@ -3,7 +3,7 @@ from data.legacy.load_data import load_data
 from model.ver1.Transformer import Transformer
 from utils.common import *
 
-train_data_loader, valid_data_loader = load_data(0.01)
+train_data_loader, valid_data_loader = load_data()
 
 model = Transformer(d_input=train_data_loader.encoder_vocab_size,
                     d_output=train_data_loader.decoder_vocab_size,
@@ -17,11 +17,11 @@ model = Transformer(d_input=train_data_loader.encoder_vocab_size,
 model.summary_model()
 
 model.compile_model()
-history = model.fit(train_data_loader.item,
-                    validation_data=valid_data_loader.item,
-                    epochs=NUM_EPOCHS,
-                    callbacks=model.make_callbacks(),
-                    verbose=1)
+history = model.train_on_epoch(train_data=train_data_loader.item,
+                               valid_data=valid_data_loader.item,
+                               epochs=NUM_EPOCHS,
+                               callbacks=model.make_callbacks(),
+                               verbose=1)
 
 display_loss(history.history)
 
