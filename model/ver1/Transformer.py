@@ -3,8 +3,6 @@ from tensorflow.keras.callbacks import ModelCheckpoint, TensorBoard
 from tensorflow.keras.layers import Input
 from tensorflow.keras.optimizers import Adam
 from tensorflow.keras.losses import SparseCategoricalCrossentropy
-import time
-import math
 
 from model.ver1.layers.Encoder import Encoder
 from model.ver1.layers.Decoder import Decoder
@@ -43,14 +41,8 @@ class Transformer(Model):
                                dropout_prob=dropout_prob)
 
         self.learning_rate_schedule = CustomSchedule(d_model)
-        # self.optimizer = Adam(learning_rate=self.learning_rate_schedule, beta_1=0.9, beta_2=0.98, epsilon=1e-9)
         self.optimizer = Adam(learning_rate=LEARNING_RATE)
         self.training = True
-
-        # self.train_metric_loss = tf.keras.metrics.Mean(name='train_metric_loss')
-        # self.train_metric_accuracy = tf.keras.metrics.SparseCategoricalAccuracy(name='train_metric_accuracy')
-        # self.valid_metric_loss = tf.keras.metrics.Mean(name='valid_metric_loss')
-        # self.valid_metric_accuracy = tf.keras.metrics.SparseCategoricalAccuracy(name='valid_metric_accuracy')
 
     @tf.function()
     def train_step(self, data):
@@ -172,72 +164,6 @@ class Transformer(Model):
                                          training=self.training)
 
         return output, attention
-
-    # @tf.function(input_signature=train_step_signature)
-    # def _tf_train_on_batch(self, source, target):
-    #     target_input = target[:, :-1]
-    #     target_real = target[:, 1:]
-    #
-    #     with tf.GradientTape() as tape:
-    #         predictions, _ = self.call(source, target_input)
-    #         loss = self.criterion(target_real, predictions)
-    #
-    #     gradients = tape.gradient(loss, self.trainable_variables)
-    #
-    #     self.optimizer.apply_gradients(zip(gradients, self.trainable_variables))
-    #
-    #     self.train_metric_loss(loss)
-    #     self.train_metric_accuracy(target_real, predictions)
-
-    # @tf.function(input_signature=train_step_signature)
-    # def _tf_evaluate_on_batch(self, source, target):
-    #     target_input = target[:, :-1]
-    #     target_real = target[:, 1:]
-    #
-    #     predictions, _ = self.call(source, target_input)
-    #     loss = self.criterion(target_real, predictions)
-    #
-    #     self.valid_metric_loss(loss)
-    #     self.valid_metric_accuracy(target_real, predictions)
-
-    # def train_on_batch(self, data_loader, log_interval):
-    #     for batch_index, (source, target) in enumerate(data_loader.item):
-    #         self._tf_train_on_batch(source=source, target=target)
-    #
-    #         if batch_index % log_interval == 0 and batch_index is not 0:
-    #             print(" BATCH: [{}/{}({:.0f}%)] | TRAIN LOSS: {:.4f}, ACCURACY: {:.4f}".format(
-    #                 batch_index * len(source),
-    #                 len(data_loader.dataset),
-    #                 100.0 * batch_index / len(data_loader),
-    #                 self.train_metric_loss.result(),
-    #                 self.train_metric_accuracy.result()))
-    #
-    # def evaluate_on_batch(self, data_loader):
-    #     for batch_index, (source, target) in enumerate(data_loader.item):
-    #         self._tf_evaluate_on_batch(source=source, target=target)
-    #
-    # def train_on_epoch(self, train_data_loader, valid_data_loader, epochs, log_interval=1):
-    #     for epoch in range(epochs):
-    #         print('=============== TRAINING EPOCHS {} / {} =============== '.format(epoch + 1, epochs))
-    #         train_start_time = time.time()
-    #
-    #         self.train_metric_loss.reset_states()
-    #         self.train_metric_accuracy.reset_states()
-    #         self.valid_metric_loss.reset_states()
-    #         self.valid_metric_accuracy.reset_states()
-    #
-    #         self.train_on_batch(data_loader=train_data_loader, log_interval=log_interval)
-    #         self.evaluate_on_batch(data_loader=valid_data_loader)
-    #
-    #         print("TRAIN LOSS: {:.4f}, ACC: {:.2f}, PPL: {:.4f} | VALID LOSS: {:.4f}, ACC: {:.2f}, PPL: {:.4f} | "
-    #               "ELAPSED TIME: {}\n".
-    #               format(self.train_metric_loss.result(),
-    #                      self.train_metric_accuracy.result() * 100.0,
-    #                      math.exp(self.train_metric_loss.result()),
-    #                      self.valid_metric_loss.result(),
-    #                      self.valid_metric_accuracy.result() * 100.0,
-    #                      math.exp(self.valid_metric_loss.result()),
-    #                      format_time(time.time() - train_start_time)))
 
     def train_on_epoch(self, train_data, valid_data, epochs, callbacks, verbose):
         self.training = True
