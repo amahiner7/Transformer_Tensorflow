@@ -24,8 +24,3 @@ history = model.train_on_epoch(train_data=train_data_loader.item,
                                verbose=1)
 
 display_loss(history.history)
-
-# model.train_on_epoch(train_data_loader=train_data_loader,
-#                      valid_data_loader=valid_data_loader,
-#                      epochs=NUM_EPOCHS,
-#                      log_interval=50)
