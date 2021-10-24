@@ -191,7 +191,7 @@ class Transformer(Model):
 
         for i in range(max_seq_len):
             # predictions.shape == (batch_size, seq_len, vocab_size)
-            predictions, attention_weights = self.call(encoder_input, output)
+            predictions, attention_weights = self.call((encoder_input, output))
 
             # seq_len 차원에서 마지막 단어를 선택합니다.
             predictions = predictions[:, -1:, :]  # (batch_size, 1, vocab_size)

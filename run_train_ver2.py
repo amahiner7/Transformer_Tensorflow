@@ -16,7 +16,9 @@ model = Transformer(d_input=train_data_loader.encoder_vocab_size,
                     seq_len=MAX_SEQ_LEN)
 model.summary_model()
 
-model.train_on_epoch(train_data_loader=train_data_loader,
-                     valid_data_loader=valid_data_loader,
-                     epochs=NUM_EPOCHS,
-                     log_interval=50)
+history = model.train_on_epoch(train_data=train_data_loader,
+                               valid_data=valid_data_loader,
+                               epochs=NUM_EPOCHS,
+                               log_interval=50)
+
+display_loss(history)

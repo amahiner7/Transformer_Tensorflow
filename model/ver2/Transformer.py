@@ -17,7 +17,7 @@ train_step_signature = [tf.TensorSpec(shape=(None, None), dtype=tf.int64),
 
 class Transformer(Model):
     def __init__(self, d_input, d_output, d_embed, d_model, d_ff, num_heads, num_layers,
-                 dropout_prob, seq_len, name='Transformer'):
+                 dropout_prob, seq_len, name='Transformer_ver2_Custom_training_loop'):
         super().__init__(name=name)
 
         self.encoder = Encoder(d_input=d_input,
@@ -104,7 +104,7 @@ class Transformer(Model):
         target_real = target[:, 1:]
 
         with tf.GradientTape() as tape:
-            predictions, _ = self.call(source, target_input)
+            predictions, _ = self.call((source, target_input))
             loss = self.criterion(target_real, predictions)
 
         gradients = tape.gradient(loss, self.trainable_variables)
@@ -119,7 +119,7 @@ class Transformer(Model):
         target_input = target[:, :-1]
         target_real = target[:, 1:]
 
-        predictions, _ = self.call(source, target_input)
+        predictions, _ = self.call((source, target_input))
         loss = self.criterion(target_real, predictions)
 
         self.valid_metric_loss(loss)
@@ -141,7 +141,12 @@ class Transformer(Model):
         for batch_index, (source, target) in enumerate(data_loader.item):
             self._tf_evaluate_on_batch(source=source, target=target)
 
-    def train_on_epoch(self, train_data_loader, valid_data_loader, epochs, log_interval=1):
+    def train_on_epoch(self, train_data, valid_data, epochs, log_interval=1):
+        train_metric_loss_history = []
+        train_metric_acc_history = []
+        valid_metric_loss_history = []
+        valid_metric_acc_history = []
+
         for epoch in range(epochs):
             print('=============== TRAINING EPOCHS {} / {} =============== '.format(epoch + 1, epochs))
             train_start_time = time.time()
@@ -151,8 +156,8 @@ class Transformer(Model):
             self.valid_metric_loss.reset_states()
             self.valid_metric_accuracy.reset_states()
 
-            self.train_on_batch(data_loader=train_data_loader, log_interval=log_interval)
-            self.evaluate_on_batch(data_loader=valid_data_loader)
+            self.train_on_batch(data_loader=train_data, log_interval=log_interval)
+            self.evaluate_on_batch(data_loader=valid_data)
 
             print("TRAIN LOSS: {:.4f}, ACC: {:.2f}, PPL: {:.4f} | VALID LOSS: {:.4f}, ACC: {:.2f}, PPL: {:.4f} | "
                   "ELAPSED TIME: {}\n".
@@ -164,13 +169,13 @@ class Transformer(Model):
                          math.exp(self.valid_metric_loss.result()),
                          format_time(time.time() - train_start_time)))
 
-    def train_on_epoch(self, train_data, valid_data, epochs, callbacks, verbose):
-        self.training = True
-        history = self.fit(train_data,
-                           validation_data=valid_data,
-                           epochs=epochs,
-                           callbacks=callbacks,
-                           verbose=verbose)
+            train_metric_loss_history.append(self.train_metric_loss.result())
+            train_metric_acc_history.append(self.train_metric_accuracy.result())
+            valid_metric_loss_history.append(self.valid_metric_loss.result())
+            valid_metric_acc_history.append(self.valid_metric_accuracy.result())
+
+        history = {'loss': train_metric_loss_history, 'accuracy': train_metric_acc_history,
+                   'val_loss': valid_metric_loss_history, 'val_accuracy': valid_metric_acc_history}
 
         return history
 
@@ -189,7 +194,7 @@ class Transformer(Model):
 
         for i in range(max_seq_len):
             # predictions.shape == (batch_size, seq_len, vocab_size)
-            predictions, attention_weights = self.call(encoder_input, output)
+            predictions, attention_weights = self.call((encoder_input, output))
 
             # seq_len 차원에서 마지막 단어를 선택합니다.
             predictions = predictions[:, -1:, :]  # (batch_size, 1, vocab_size)
