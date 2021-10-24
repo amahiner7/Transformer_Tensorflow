@@ -71,6 +71,7 @@ class Transformer(Model):
         # Return a dict mapping metric names to current value
         return {m.name: m.result() for m in self.metrics}
 
+    @tf.function
     def test_step(self, data):
         # Unpack the data
         source, target = data
