@@ -10,6 +10,7 @@ from model.ver1.layers.Decoder import Decoder
 from config.hyper_parameters import *
 from utils.common import *
 from utils.CustomSchedule import CustomSchedule
+from config.file_path import *
 
 train_step_signature = [tf.TensorSpec(shape=(None, None), dtype=tf.int64),
                         tf.TensorSpec(shape=(None, None), dtype=tf.int64)]
@@ -128,6 +129,8 @@ class Transformer(Model):
     def _get_lr(self):
         current_learning_rate = self.optimizer._decayed_lr(tf.float32)
 
+        return current_learning_rate
+
     def train_on_batch(self, data_loader, log_interval):
         for batch_index, (source, target) in enumerate(data_loader.item):
             self._tf_train_on_batch(source=source, target=target)
@@ -150,6 +153,7 @@ class Transformer(Model):
         valid_metric_loss_history = []
         valid_metric_acc_history = []
         learning_rate_history = []
+        best_val_loss = None
 
         for epoch in range(epochs):
             print('=============== TRAINING EPOCHS {} / {} =============== '.format(epoch + 1, epochs))
@@ -164,14 +168,23 @@ class Transformer(Model):
             self.evaluate_on_batch(data_loader=valid_data)
 
             print("TRAIN LOSS: {:.4f}, ACC: {:.2f}, PPL: {:.4f} | VALID LOSS: {:.4f}, ACC: {:.2f}, PPL: {:.4f} | "
-                  "ELAPSED TIME: {}\n".
+                  "LEARNING RATE: {:.6f}, ELAPSED TIME: {}\n".
                   format(self.train_metric_loss.result(),
                          self.train_metric_accuracy.result() * 100.0,
                          math.exp(self.train_metric_loss.result()),
                          self.valid_metric_loss.result(),
                          self.valid_metric_accuracy.result() * 100.0,
                          math.exp(self.valid_metric_loss.result()),
+                         self._get_lr(),
                          format_time(time.time() - train_start_time)))
+
+            if best_val_loss is None or self.valid_metric_loss.result() < best_val_loss:
+                model_file_path = MODEL_FILE_PATH.format(epoch, self.valid_metric_loss.result())
+                self.save_weights(model_file_path, save_format='h5')
+                print("{} is saved.".format(model_file_path))
+                best_val_loss = self.valid_metric_loss.result()
+            else:
+                print("val loss: {:.4f} is not improved.".format(self.valid_metric_loss.result().numpy()))
 
             train_metric_loss_history.append(self.train_metric_loss.result())
             train_metric_acc_history.append(self.train_metric_accuracy.result())
