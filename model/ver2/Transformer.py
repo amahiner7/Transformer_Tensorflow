@@ -1,3 +1,4 @@
+import numpy
 from tensorflow.keras.models import Model
 from tensorflow.keras.layers import Input
 from tensorflow.keras.optimizers import Adam
@@ -153,7 +154,7 @@ class Transformer(Model):
         valid_metric_loss_history = []
         valid_metric_acc_history = []
         learning_rate_history = []
-        best_val_loss = None
+        best_val_loss = math.inf
 
         for epoch in range(epochs):
             print('=============== TRAINING EPOCHS {} / {} =============== '.format(epoch + 1, epochs))
@@ -167,12 +168,11 @@ class Transformer(Model):
             self.train_on_batch(data_loader=train_data, log_interval=log_interval)
             self.evaluate_on_batch(data_loader=valid_data)
 
-            if best_val_loss is None or self.valid_metric_loss.result() < best_val_loss:
+            if best_val_loss is math.inf or self.valid_metric_loss.result() < best_val_loss:
                 model_file_path = MODEL_FILE_PATH.format(epoch, self.valid_metric_loss.result())
                 self.save_weights(model_file_path, save_format='h5')
-                print("{} is saved.".format(model_file_path))
-                print("val_loss improved from {:.5f} to {:.5f}, saving model to {}".format(
-                    best_val_loss, self.valid_metric_loss.result(), model_file_path))
+                print("val_loss improved from {:.5f} to {:.5f}, saving model to ".format(
+                    best_val_loss, self.valid_metric_loss.result()) + model_file_path)
                 best_val_loss = self.valid_metric_loss.result()
             else:
                 print("val_loss did not improve from {:.5f}".format(best_val_loss))
