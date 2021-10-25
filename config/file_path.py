@@ -15,6 +15,7 @@ TENSORBOARD_LEARNING_RATE_LOG_DIR = os.path.join(TENSORBOARD_LOG_DIR, "learning_
 MODEL_FILE_ROOT_DIR = "./model_files"
 MODEL_FILE_DIR = os.path.join(MODEL_FILE_ROOT_DIR, DATETIME_DIR)
 MODEL_FILE_PATH = os.path.join(MODEL_FILE_DIR, "Transformer_epoch_{:02d}_val_loss_{:.4f}.h5")
+MODEL_FILE_PATH_FIT_FORM = os.path.join(MODEL_FILE_DIR, "Transformer_epoch_{epoch:02d}_val_loss_{val_loss:.4f}.h5")
 
 if not os.path.exists(LOG_ROOT_DIR):
     os.mkdir(LOG_ROOT_DIR)
