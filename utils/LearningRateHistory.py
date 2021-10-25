@@ -11,7 +11,7 @@ class LearningRateHistory(tf.keras.callbacks.Callback):
             self.summary_writer.set_as_default()
 
     def on_epoch_begin(self, epoch, logs):
-        current_learning_rate = float(tf.keras.backend.get_value(self.model.optimizer.lr))
+        current_learning_rate = float(tf.keras.backend.get_value(self.model.optimizer._decayed_lr(tf.float32)))
         self.lr_history_list.append(current_learning_rate)
 
         if self.summary_writer is not None:
