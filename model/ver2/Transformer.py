@@ -125,6 +125,9 @@ class Transformer(Model):
         self.valid_metric_loss(loss)
         self.valid_metric_accuracy(target_real, predictions)
 
+    def _get_lr(self):
+        current_learning_rate = self.optimizer._decayed_lr(tf.float32)
+
     def train_on_batch(self, data_loader, log_interval):
         for batch_index, (source, target) in enumerate(data_loader.item):
             self._tf_train_on_batch(source=source, target=target)
@@ -146,6 +149,7 @@ class Transformer(Model):
         train_metric_acc_history = []
         valid_metric_loss_history = []
         valid_metric_acc_history = []
+        learning_rate_history = []
 
         for epoch in range(epochs):
             print('=============== TRAINING EPOCHS {} / {} =============== '.format(epoch + 1, epochs))
@@ -173,9 +177,11 @@ class Transformer(Model):
             train_metric_acc_history.append(self.train_metric_accuracy.result())
             valid_metric_loss_history.append(self.valid_metric_loss.result())
             valid_metric_acc_history.append(self.valid_metric_accuracy.result())
+            learning_rate_history.append(self._get_lr())
 
         history = {'loss': train_metric_loss_history, 'accuracy': train_metric_acc_history,
-                   'val_loss': valid_metric_loss_history, 'val_accuracy': valid_metric_acc_history}
+                   'val_loss': valid_metric_loss_history, 'val_accuracy': valid_metric_acc_history,
+                   'learning_rate': learning_rate_history}
 
         return history
 

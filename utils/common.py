@@ -79,6 +79,19 @@ def display_loss(history):
     plt.title('Loss')
     plt.show()
 
+    if history.get('learning_rate') is not None:
+        learning_rate = history['learning_rate']
+        x_len = np.arange(len(learning_rate))
+        plt.clf()
+        plt.figure()
+        plt.plot(x_len, learning_rate, marker='.', c="yellow", label='Learning rate')
+        plt.legend(loc='upper right')
+        plt.grid()
+        plt.xlabel('epoch')
+        plt.ylabel('Learning rate')
+        plt.title('Learning rate')
+        plt.show()
+
 
 def plot_attention_weights(attention, sentence, result, layer, tokenizer_pt, tokenizer_en):
     fig = plt.figure(figsize=(16, 8))
