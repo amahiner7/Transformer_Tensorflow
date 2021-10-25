@@ -93,7 +93,7 @@ class Transformer(Model):
     def make_callbacks(self):
         callbacks = []
 
-        model_check_point = ModelCheckpoint(filepath=MODEL_FILE_PATH,
+        model_check_point = ModelCheckpoint(filepath=MODEL_FILE_PATH_FIT_FORM,
                                             monitor='val_loss',
                                             save_weights_only=True,
                                             save_best_only=True,
