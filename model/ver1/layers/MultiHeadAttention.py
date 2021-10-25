@@ -12,11 +12,11 @@ class MultiHeadAttention(Layer):
         assert d_model % self.num_heads == 0
         self.d_key = d_model // num_heads  # Key(=Query=Value) dimension
 
-        self.query_layer = Dense(units=d_model)  # Query fully connected layer
-        self.key_layer = Dense(units=d_model)  # Key fully connected layer
-        self.value_layer = Dense(units=d_model)  # Value fully connected layer
+        self.query_layer = Dense(units=d_model, kernel_initializer='he_uniform')  # Query fully connected layer
+        self.key_layer = Dense(units=d_model, kernel_initializer='he_uniform')  # Key fully connected layer
+        self.value_layer = Dense(units=d_model, kernel_initializer='he_uniform')  # Value fully connected layer
 
-        self.output_layer = Dense(units=d_embed)
+        self.output_layer = Dense(units=d_embed, kernel_initializer='he_uniform')
 
         self.dropout = Dropout(rate=dropout_prob)
         self.d_k_scale = tf.math.sqrt(tf.cast(self.d_key, tf.float32))

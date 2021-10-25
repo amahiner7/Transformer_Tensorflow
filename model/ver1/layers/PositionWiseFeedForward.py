@@ -5,8 +5,8 @@ class PositionWiseFeedForward(Layer):
     def __init__(self, d_embed, d_ff, dropout_prob, name="PositionWiseFeedForward"):
         super().__init__(name=name)
 
-        self.first_fc_layer = Dense(units=d_ff)
-        self.second_fc_layer = Dense(units=d_embed)
+        self.first_fc_layer = Dense(units=d_ff, kernel_initializer='he_uniform')
+        self.second_fc_layer = Dense(units=d_embed, kernel_initializer='he_uniform')
         self.relu = ReLU()
         self.dropout = Dropout(rate=dropout_prob)
 
