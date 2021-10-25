@@ -238,9 +238,9 @@ class Transformer(Model):
         print('Input: {}'.format(sentence))
         print('Predicted translation: {}'.format(predicted_sentence))
 
-    def build_graph(self, encoder_input_shape, decoder_input_size, batch_size):
+    def build_graph(self, encoder_input_shape, decoder_input_shape, batch_size):
         encoder_input = Input(shape=encoder_input_shape, batch_size=batch_size)
-        decoder_input = Input(shape=decoder_input_size, batch_size=batch_size)
+        decoder_input = Input(shape=decoder_input_shape, batch_size=batch_size)
         return Model(inputs=[encoder_input, decoder_input], outputs=self.call((encoder_input, decoder_input)))
 
     def summary_model(self):
@@ -251,6 +251,6 @@ class Transformer(Model):
         batch_size = temp_target.shape[0]
 
         temp_model = self.build_graph(encoder_input_shape=encoder_input_shape,
-                                      decoder_input_size=decoder_input_size,
+                                      decoder_input_shape=decoder_input_size,
                                       batch_size=batch_size)
         temp_model.summary()
