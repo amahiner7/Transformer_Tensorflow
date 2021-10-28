@@ -27,7 +27,14 @@ class DataLoader:
             self.item = self.item.filter(self.filter_max_length).padded_batch(batch_size, ((None,), (None,)))
 
     def __len__(self):
-        return int(np.floor(len(self.dataset) / self.batch_size))
+        return self.item.reduce(0, lambda x, _: x + 1).numpy()
+
+    def item_length(self):
+        item_length = 0
+        for source, _ in self.item:
+            item_length += len(source)
+
+        return item_length
 
     def encode(self, source, target):
         source = [self.tokenizer_pt.vocab_size] + self.tokenizer_pt.encode(source.numpy()) + \

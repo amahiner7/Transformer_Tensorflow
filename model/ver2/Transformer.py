@@ -133,14 +133,17 @@ class Transformer(Model):
         return current_learning_rate
 
     def train_on_batch(self, data_loader, log_interval):
+        complete_batch_size = 0
+
         for batch_index, (source, target) in enumerate(data_loader.item):
             self._tf_train_on_batch(source=source, target=target)
 
-            if (batch_index % log_interval == 0 or batch_index == len(data_loader)) and batch_index is not 0:
-                print(" BATCH: [{}/{}({:.0f}%)] | TRAIN LOSS: {:.4f}, ACCURACY: {:.4f}".format(
-                    batch_index * len(source),
-                    len(data_loader.dataset),
-                    100.0 * batch_index / len(data_loader),
+            complete_batch_size += len(source)
+            if (batch_index % log_interval == 0 or (batch_index + 1) == len(data_loader)) and batch_index is not 0:
+                print("BATCH: [{}/{}({:.0f}%)] | TRAIN LOSS: {:.4f}, ACCURACY: {:.4f}".format(
+                    complete_batch_size,
+                    data_loader.item_length(),
+                    100.0 * (batch_index + 1) / len(data_loader),
                     self.train_metric_loss.result(),
                     self.train_metric_accuracy.result()))
 
