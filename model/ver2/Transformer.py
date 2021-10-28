@@ -136,7 +136,7 @@ class Transformer(Model):
         for batch_index, (source, target) in enumerate(data_loader.item):
             self._tf_train_on_batch(source=source, target=target)
 
-            if batch_index % log_interval == 0 and batch_index is not 0:
+            if (batch_index % log_interval == 0 or batch_index == len(data_loader)) and batch_index is not 0:
                 print(" BATCH: [{}/{}({:.0f}%)] | TRAIN LOSS: {:.4f}, ACCURACY: {:.4f}".format(
                     batch_index * len(source),
                     len(data_loader.dataset),
@@ -168,7 +168,7 @@ class Transformer(Model):
             self.train_on_batch(data_loader=train_data, log_interval=log_interval)
             self.evaluate_on_batch(data_loader=valid_data)
 
-            if best_val_loss is math.inf or self.valid_metric_loss.result() < best_val_loss:
+            if self.valid_metric_loss.result() < best_val_loss:
                 model_file_path = MODEL_FILE_PATH.format(epoch, self.valid_metric_loss.result())
                 self.save_weights(model_file_path, save_format='h5')
                 print("val_loss improved from {:.5f} to {:.5f}, saving model to ".format(
