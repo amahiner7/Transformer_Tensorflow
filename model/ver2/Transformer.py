@@ -140,12 +140,12 @@ class Transformer(Model):
 
             complete_batch_size += len(source)
             if (batch_index % log_interval == 0 or (batch_index + 1) == len(data_loader)) and batch_index is not 0:
-                print("BATCH: [{}/{}({:.0f}%)] | TRAIN LOSS: {:.4f}, ACCURACY: {:.4f}".format(
+                print("BATCH: [{}/{}({:.0f}%)] | TRAIN LOSS: {:.4f}, ACCURACY: {:.2f}%".format(
                     complete_batch_size,
                     data_loader.item_length(),
                     100.0 * (batch_index + 1) / len(data_loader),
                     self.train_metric_loss.result(),
-                    self.train_metric_accuracy.result()))
+                    self.train_metric_accuracy.result() * 100))
 
     def evaluate_on_batch(self, data_loader):
         for batch_index, (source, target) in enumerate(data_loader.item):
@@ -160,7 +160,7 @@ class Transformer(Model):
         best_val_loss = math.inf
 
         for epoch in range(epochs):
-            print('=============== TRAINING EPOCHS {} / {} =============== '.format(epoch + 1, epochs))
+            print("=============== TRAINING EPOCHS {} / {} ===============".format(epoch + 1, epochs))
             train_start_time = time.time()
 
             self.train_metric_loss.reset_states()
@@ -180,7 +180,7 @@ class Transformer(Model):
             else:
                 print("val_loss did not improve from {:.5f}".format(best_val_loss))
 
-            print("TRAIN LOSS: {:.4f}, ACC: {:.2f}, PPL: {:.4f} | VALID LOSS: {:.4f}, ACC: {:.2f}, PPL: {:.4f} | "
+            print("TRAIN LOSS: {:.4f}, ACC: {:.2f}%, PPL: {:.4f} | VALID LOSS: {:.4f}, ACC: {:.2f}%, PPL: {:.4f} | "
                   "LEARNING RATE: {:.6f}, ELAPSED TIME: {}\n".
                   format(self.train_metric_loss.result(),
                          self.train_metric_accuracy.result() * 100.0,
@@ -240,8 +240,8 @@ class Transformer(Model):
         predicted_sentence = tokenizer_en.decode([i for i in result
                                                   if i < tokenizer_en.vocab_size])
 
-        print('Input: {}'.format(sentence))
-        print('Predicted translation: {}'.format(predicted_sentence))
+        print("Input: {}".format(sentence))
+        print("Predicted translation: {}".format(predicted_sentence))
 
     def build_graph(self, encoder_input_shape, decoder_input_shape, batch_size):
         encoder_input = Input(shape=encoder_input_shape, batch_size=batch_size)
