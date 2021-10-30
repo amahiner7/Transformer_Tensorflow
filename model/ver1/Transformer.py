@@ -9,9 +9,9 @@ from model.ver1.layers.Decoder import Decoder
 from config.file_path import *
 from config.hyper_parameters import *
 from utils.common import *
-from utils.CosineAnnealingWarmUpRestarts import CosineAnnealingWarmUpRestarts
+from model.custom_scheduler.CosineAnnealingWarmUpRestarts import CosineAnnealingWarmUpRestarts
 from utils.LearningRateHistory import LearningRateHistory
-from utils.CustomSchedule import CustomSchedule
+from model.custom_scheduler.CustomSchedule import CustomSchedule
 
 train_step_signature = [tf.TensorSpec(shape=(None, None), dtype=tf.int64),
                         tf.TensorSpec(shape=(None, None), dtype=tf.int64)]

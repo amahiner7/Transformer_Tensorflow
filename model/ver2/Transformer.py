@@ -1,4 +1,3 @@
-import numpy
 from tensorflow.keras.models import Model
 from tensorflow.keras.layers import Input
 from tensorflow.keras.optimizers import Adam
@@ -10,7 +9,7 @@ from model.ver1.layers.Encoder import Encoder
 from model.ver1.layers.Decoder import Decoder
 from config.hyper_parameters import *
 from utils.common import *
-from utils.CustomSchedule import CustomSchedule
+from model.custom_scheduler.CustomSchedule import CustomSchedule
 from config.file_path import *
 
 train_step_signature = [tf.TensorSpec(shape=(None, None), dtype=tf.int64),
