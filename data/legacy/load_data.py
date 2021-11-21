@@ -4,7 +4,7 @@ warnings.simplefilter('ignore')
 
 import tensorflow_datasets as tfds
 import time
-from config.hyper_parameters import *
+from config.hyper_parameters import HyperParameter
 from data.legacy.DataLoader import DataLoader
 
 
@@ -28,15 +28,15 @@ def load_data(sample_ratio=1.0):
         valid_examples = valid_examples.take(int(len(valid_examples) * sample_ratio))
 
     train_data_loader = DataLoader(dataset=train_examples,
-                                   buffer_size=BUFFER_SIZE,
-                                   batch_size=BATCH_SIZE,
-                                   max_seq_len=MAX_SEQ_LEN,
+                                   buffer_size=HyperParameter.BUFFER_SIZE,
+                                   batch_size=HyperParameter.BATCH_SIZE,
+                                   max_seq_len=HyperParameter.MAX_SEQ_LEN,
                                    is_train_data=True)
 
     valid_data_loader = DataLoader(dataset=valid_examples,
-                                   buffer_size=BUFFER_SIZE,
-                                   batch_size=BATCH_SIZE,
-                                   max_seq_len=MAX_SEQ_LEN,
+                                   buffer_size=HyperParameter.BUFFER_SIZE,
+                                   batch_size=HyperParameter.BATCH_SIZE,
+                                   max_seq_len=HyperParameter.MAX_SEQ_LEN,
                                    is_train_data=False)
 
     print("train_data_loader.dataset length: ", len(train_data_loader.dataset))

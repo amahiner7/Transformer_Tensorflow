@@ -11,6 +11,7 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
     epochs = args.epochs
+
     train_data_loader, valid_data_loader = load_data()
 
     model = Transformer(d_input=train_data_loader.encoder_vocab_size,
