@@ -2,6 +2,7 @@ import argparse
 from config.hyper_parameters import HyperParameter
 from data.legacy.load_data import load_data
 from model.ver2.Transformer import Transformer
+from config.file_path import make_directories
 from utils.common import *
 
 if __name__ == '__main__':
@@ -12,6 +13,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
     epochs = args.epochs
 
+    make_directories()
     train_data_loader, valid_data_loader = load_data()
 
     model = Transformer(d_input=train_data_loader.encoder_vocab_size,

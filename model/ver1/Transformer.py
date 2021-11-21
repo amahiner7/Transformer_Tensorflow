@@ -6,8 +6,8 @@ from tensorflow.keras.losses import SparseCategoricalCrossentropy
 
 from model.ver1.layers.Encoder import Encoder
 from model.ver1.layers.Decoder import Decoder
-from config.file_path import *
-from config.hyper_parameters import *
+from config.file_path import FilePath
+from config.hyper_parameters import HyperParameter
 from utils.common import *
 from model.custom_scheduler.CosineAnnealingWarmUpRestarts import CosineAnnealingWarmUpRestarts
 from utils.LearningRateHistory import LearningRateHistory
@@ -41,7 +41,7 @@ class Transformer(Model):
                                dropout_prob=dropout_prob)
 
         self.learning_rate_schedule = CustomSchedule(d_model)
-        self.optimizer = Adam(learning_rate=LEARNING_RATE)
+        self.optimizer = Adam(learning_rate=HyperParameter.LEARNING_RATE)
         self.training = True
 
     @tf.function()
@@ -93,20 +93,20 @@ class Transformer(Model):
     def make_callbacks(self):
         callbacks = []
 
-        model_check_point = ModelCheckpoint(filepath=MODEL_FILE_PATH_FIT_FORM,
+        model_check_point = ModelCheckpoint(filepath=FilePath.MODEL_FILE_PATH_FIT_FORM,
                                             monitor='val_loss',
                                             save_weights_only=True,
                                             save_best_only=True,
                                             verbose=1)
 
-        tensorboard = TensorBoard(log_dir=TENSORBOARD_LOG_DIR)
+        tensorboard = TensorBoard(log_dir=FilePath.TENSORBOARD_LOG_DIR)
 
-        learning_rate_scheduler = CosineAnnealingWarmUpRestarts(initial_learning_rate=LEARNING_RATE,
+        learning_rate_scheduler = CosineAnnealingWarmUpRestarts(initial_learning_rate=HyperParameter.LEARNING_RATE,
                                                                 first_decay_steps=1,
                                                                 alpha=0.0,
                                                                 t_mul=2.0,
                                                                 m_mul=1.0)
-        learning_rate_history = LearningRateHistory(log_dir=TENSORBOARD_LEARNING_RATE_LOG_DIR)
+        learning_rate_history = LearningRateHistory(log_dir=FilePath.TENSORBOARD_LEARNING_RATE_LOG_DIR)
 
         callbacks.append(model_check_point)
         callbacks.append(tensorboard)
@@ -225,8 +225,8 @@ class Transformer(Model):
         return Model(inputs=[encoder_input, decoder_input], outputs=self.call((encoder_input, decoder_input)))
 
     def summary_model(self):
-        temp_source = tf.random.uniform((BATCH_SIZE, 38), dtype=tf.int64, minval=0, maxval=200)
-        temp_target = tf.random.uniform((BATCH_SIZE, 36), dtype=tf.int64, minval=0, maxval=200)
+        temp_source = tf.random.uniform((HyperParameter.BATCH_SIZE, 38), dtype=tf.int64, minval=0, maxval=200)
+        temp_target = tf.random.uniform((HyperParameter.BATCH_SIZE, 36), dtype=tf.int64, minval=0, maxval=200)
         encoder_input_shape = temp_source.shape[-1]
         decoder_input_size = temp_target.shape[-1]
         batch_size = temp_target.shape[0]

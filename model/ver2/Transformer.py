@@ -7,10 +7,10 @@ import math
 
 from model.ver1.layers.Encoder import Encoder
 from model.ver1.layers.Decoder import Decoder
-from config.hyper_parameters import *
+from config.file_path import FilePath
+from config.hyper_parameters import HyperParameter
 from utils.common import *
 from model.custom_scheduler.CustomSchedule import CustomSchedule
-from config.file_path import *
 
 train_step_signature = [tf.TensorSpec(shape=(None, None), dtype=tf.int64),
                         tf.TensorSpec(shape=(None, None), dtype=tf.int64)]
@@ -171,7 +171,7 @@ class Transformer(Model):
             self.evaluate_on_batch(data_loader=valid_data)
 
             if self.valid_metric_loss.result() < best_val_loss:
-                model_file_path = MODEL_FILE_PATH.format(epoch, self.valid_metric_loss.result())
+                model_file_path = FilePath.MODEL_FILE_PATH.format(epoch, self.valid_metric_loss.result())
                 self.save_weights(model_file_path, save_format='h5')
                 print("val_loss improved from {:.5f} to {:.5f}, saving model to ".format(
                     best_val_loss, self.valid_metric_loss.result()) + model_file_path)
@@ -248,8 +248,8 @@ class Transformer(Model):
         return Model(inputs=[encoder_input, decoder_input], outputs=self.call((encoder_input, decoder_input)))
 
     def summary_model(self):
-        temp_source = tf.random.uniform((BATCH_SIZE, 38), dtype=tf.int64, minval=0, maxval=200)
-        temp_target = tf.random.uniform((BATCH_SIZE, 36), dtype=tf.int64, minval=0, maxval=200)
+        temp_source = tf.random.uniform((HyperParameter.BATCH_SIZE, 38), dtype=tf.int64, minval=0, maxval=200)
+        temp_target = tf.random.uniform((HyperParameter.BATCH_SIZE, 36), dtype=tf.int64, minval=0, maxval=200)
         encoder_input_shape = temp_source.shape[-1]
         decoder_input_size = temp_target.shape[-1]
         batch_size = temp_target.shape[0]
