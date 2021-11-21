@@ -1,11 +1,10 @@
 import warnings
-
-warnings.simplefilter('ignore')
-
 import tensorflow_datasets as tfds
 import time
 from config.hyper_parameters import HyperParameter
 from data.legacy.DataLoader import DataLoader
+
+warnings.simplefilter('ignore')
 
 
 def get_data_sample(data, sample_ratio):
